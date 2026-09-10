@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F1EB">
+<title>Receipt Log</title>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Receipt%20Log%22,%22display%22:%22standalone%22}">
+<style>
+  :root{
+    --paper:#F2F1EB;
+    --card:#FFFFFF;
+    --ink:#1C2A2A;
+    --ink-soft:#5B6866;
+    --line:#DAD6C8;
+    --stamp:#A63E3E;
+    --stamp-dark:#832F2F;
+    --ok:#2E6B4F;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .wrap{
+    max-width:480px;
+    margin:0 auto;
+    padding:28px 18px 120px;
+  }
+  header{
+    margin-bottom:22px;
+  }
+  .eyebrow{
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    color:var(--ink-soft);
+  }
+  h1{
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:26px;
+    margin:4px 0 0;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .now{
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:14px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--line);
+  }
+
+  .receipt{
+    background:var(--card);
+    border-radius:2px;
+    box-shadow:0 1px 2px rgba(28,42,42,0.06), 0 8px 24px rgba(28,42,42,0.08);
+    padding:22px 18px 24px;
+    position:relative;
+  }
+  .receipt::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:-9px;
+    height:9px;
+    background:
+      linear-gradient(135deg, var(--paper) 50%, transparent 50%) 0 0/14px 14px,
+      linear-gradient(-135deg, var(--paper) 50%, transparent 50%) 0 0/14px 14px;
+    background-color:var(--card);
+    mask-image: linear-gradient(#000,#000);
+  }
+
+  .field{
+    margin-bottom:20px;
+  }
+  label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:7px;
+  }
+
+  .photo-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    width:100%;
+    padding:20px 12px;
+    border:1.5px dashed var(--line);
+    border-radius:6px;
+    background:#FAFAF6;
+    color:var(--ink-soft);
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .photo-btn svg{ width:20px; height:20px; flex:none; }
+  .preview-wrap{
+    position:relative;
+    border-radius:6px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .preview-wrap img{
+    display:block;
+    width:100%;
+    max-height:280px;
+    object-fit:cover;
+  }
+  .retake{
+    position:absolute;
+    top:8px; right:8px;
+    background:rgba(28,42,42,0.75);
+    color:#fff;
+    border:none;
+    border-radius:5px;
+    padding:6px 10px;
+    font-size:12px;
+    font-weight:600;
+  }
+  #photoInput{ display:none; }
+
+  textarea, select{
+    width:100%;
+    font-size:16px;
+    font-family:inherit;
+    color:var(--ink);
+    background:#FAFAF6;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:12px 12px;
+  }
+  textarea{
+    resize:vertical;
+    min-height:64px;
+  }
+  select{
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="M1 1l5 5 5-5" stroke="%235B6866" stroke-width="1.6" fill="none" fill-rule="evenodd"/></svg>');
+    background-repeat:no-repeat;
+    background-position:right 14px center;
+    padding-right:34px;
+  }
+
+  .submit-bar{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, var(--paper) 60%, rgba(242,241,235,0));
+  }
+  .submit-inner{ max-width:480px; margin:0 auto; }
+  button.submit{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:6px;
+    background:var(--stamp);
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:0.01em;
+  }
+  button.submit:active{ background:var(--stamp-dark); }
+  button.submit:disabled{ background:#B7ABA0; }
+
+  .toast{
+    position:fixed;
+    left:18px; right:18px; bottom:96px;
+    max-width:444px;
+    margin:0 auto;
+    background:var(--ink);
+    color:#fff;
+    padding:12px 16px;
+    border-radius:6px;
+    font-size:14px;
+    text-align:center;
+    opacity:0;
+    transform:translateY(8px);
+    transition:opacity .2s, transform .2s;
+    pointer-events:none;
+  }
+  .toast.show{ opacity:1; transform:translateY(0); }
+  .toast.err{ background:var(--stamp-dark); }
+
+  .config-note{
+    font-size:12px;
+    color:var(--stamp-dark);
+    background:#FBEDEA;
+    border:1px solid #EAC9C2;
+    padding:10px 12px;
+    border-radius:6px;
+    margin-bottom:18px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">receipt-log</div>
+    <h1>Log a receipt</h1>
+    <div class="now" id="nowDisplay">—</div>
+  </header>
+
+  <div id="configNote" class="config-note" style="display:none;">
+    Set your Apps Script URL in the SCRIPT_URL constant near the bottom of this file before this will save anywhere.
+  </div>
+
+  <form class="receipt" id="receiptForm">
+
+    <div class="field">
+      <label for="photoInput">Photo of receipt</label>
+      <input type="file" id="photoInput" accept="image/*" capture="environment">
+      <div id="photoPromptWrap">
+        <label class="photo-btn" for="photoInput" style="margin:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8h3l2-3h6l2 3h3v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg>
+          Take photo
+        </label>
+      </div>
+      <div id="previewWrap" class="preview-wrap" style="display:none;">
+        <img id="previewImg" alt="Receipt preview">
+        <button type="button" class="retake" id="retakeBtn">Retake</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="reason">Reason</label>
+      <textarea id="reason" name="reason" placeholder="e.g. Taxi to set, lunch with agent…" required></textarea>
+    </div>
+
+    <div class="field">
+      <label for="relatedWork">Related work</label>
+      <select id="relatedWork" name="relatedWork" required>
+        <option value="" disabled selected>Choose one…</option>
+        <option value="Acting/Film">Acting/Film</option>
+        <option value="Event Sole Trader">Event Sole Trader</option>
+        <option value="Salary Events">Salary Events</option>
+      </select>
+    </div>
+
+  </form>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="submit-bar">
+    <div class="submit-inner">
+      <button type="submit" form="receiptForm" class="submit" id="submitBtn">Save receipt</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---- Set this to your deployed Apps Script Web App URL (ends in /exec) ----
+  const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+  // ----------------------------------------------------------------------------
+
+  const photoInput = document.getElementById('photoInput');
+  const previewWrap = document.getElementById('previewWrap');
+  const previewImg = document.getElementById('previewImg');
+  const photoPromptWrap = document.getElementById('photoPromptWrap');
+  const retakeBtn = document.getElementById('retakeBtn');
+  const form = document.getElementById('receiptForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const toast = document.getElementById('toast');
+  const nowDisplay = document.getElementById('nowDisplay');
+  const configNote = document.getElementById('configNote');
+
+  let compressedPhotoDataUrl = null;
+
+  if (!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+    configNote.style.display = 'block';
+  }
+
+  function pad(n){ return n.toString().padStart(2,'0'); }
+
+  function updateNow(){
+    const d = new Date();
+    const date = pad(d.getDate()) + '/' + pad(d.getMonth()+1) + '/' + d.getFullYear();
+    const time = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    nowDisplay.textContent = date + '  ·  ' + time;
+  }
+  updateNow();
+  setInterval(updateNow, 15000);
+
+  function showToast(msg, isErr){
+    toast.textContent = msg;
+    toast.className = 'toast show' + (isErr ? ' err' : '');
+    setTimeout(() => { toast.className = 'toast'; }, 3200);
+  }
+
+  photoInput.addEventListener('change', function(){
+    const file = photoInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt){
+      const img = new Image();
+      img.onload = function(){
+        const maxDim = 1400;
+        let w = img.width, h = img.height;
+        if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        compressedPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+
+        previewImg.src = compressedPhotoDataUrl;
+        previewWrap.style.display = 'block';
+        photoPromptWrap.style.display = 'none';
+      };
+      img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  retakeBtn.addEventListener('click', function(){
+    compressedPhotoDataUrl = null;
+    photoInput.value = '';
+    previewWrap.style.display = 'none';
+    photoPromptWrap.style.display = 'block';
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+
+    if (!compressedPhotoDataUrl) {
+      showToast('Add a photo of the receipt first', true);
+      return;
+    }
+    const reason = document.getElementById('reason').value.trim();
+    const relatedWork = document.getElementById('relatedWork').value;
+    if (!reason || !relatedWork) {
+      showToast('Fill in reason and related work', true);
+      return;
+    }
+    if (!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+      showToast('Apps Script URL not set up yet', true);
+      return;
+    }
+
+    const now = new Date();
+    const payload = {
+      date: pad(now.getDate()) + '/' + pad(now.getMonth()+1) + '/' + now.getFullYear(),
+      time: pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()),
+      reason: reason,
+      relatedWork: relatedWork,
+      photo: compressedPhotoDataUrl
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(payload)
+    })
+    .then(function(){
+      showToast('Receipt saved');
+      form.reset();
+      compressedPhotoDataUrl = null;
+      previewWrap.style.display = 'none';
+      photoPromptWrap.style.display = 'block';
+      document.getElementById('relatedWork').selectedIndex = 0;
+    })
+    .catch(function(){
+      showToast('Could not reach the sheet — check your connection', true);
+    })
+    .finally(function(){
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save receipt';
+    });
+  });
+</script>
+</body>
+</html>
