@@ -86,22 +86,27 @@
     margin-bottom:7px;
   }
 
+  .photo-actions{
+    display:flex;
+    gap:10px;
+  }
   .photo-btn{
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:10px;
-    width:100%;
-    padding:20px 12px;
+    gap:8px;
+    flex:1 1 0;
+    padding:20px 10px;
     border:1.5px dashed var(--line);
     border-radius:6px;
     background:#FAFAF6;
     color:var(--ink-soft);
-    font-size:14px;
+    font-size:13px;
     font-weight:600;
     cursor:pointer;
+    text-align:center;
   }
-  .photo-btn svg{ width:20px; height:20px; flex:none; }
+  .photo-btn svg{ width:19px; height:19px; flex:none; }
   .preview-wrap{
     position:relative;
     border-radius:6px;
@@ -125,7 +130,7 @@
     font-size:12px;
     font-weight:600;
   }
-  #photoInput{ display:none; }
+  #cameraInput, #libraryInput{ display:none; }
 
   textarea, select{
     width:100%;
@@ -217,14 +222,21 @@
   <form class="receipt" id="receiptForm">
 
     <div class="field">
-      <label for="photoInput">Photo of receipt</label>
-      <input type="file" id="photoInput" accept="image/*" capture="environment">
-      <div id="photoPromptWrap">
-        <label class="photo-btn" for="photoInput" style="margin:0;">
+      <label>Photo of receipt</label>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment">
+      <input type="file" id="libraryInput" accept="image/*">
+
+      <div id="photoPromptWrap" class="photo-actions">
+        <label class="photo-btn" for="cameraInput">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8h3l2-3h6l2 3h3v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg>
           Take photo
         </label>
+        <label class="photo-btn" for="libraryInput">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M4 16l5-5 4 4 3-3 4 4"/></svg>
+          Choose photo
+        </label>
       </div>
+
       <div id="previewWrap" class="preview-wrap" style="display:none;">
         <img id="previewImg" alt="Receipt preview">
         <button type="button" class="retake" id="retakeBtn">Retake</button>
@@ -263,7 +275,8 @@
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyc2fdCvCk8SYyFRgX7FAolLQ5YI3BvCW9dpn1NfuYODwkG1-WVrxAVNnlI-CU8F6lN/exec";
   // ----------------------------------------------------------------------------
 
-  const photoInput = document.getElementById('photoInput');
+  const cameraInput = document.getElementById('cameraInput');
+  const libraryInput = document.getElementById('libraryInput');
   const previewWrap = document.getElementById('previewWrap');
   const previewImg = document.getElementById('previewImg');
   const photoPromptWrap = document.getElementById('photoPromptWrap');
@@ -297,8 +310,7 @@
     setTimeout(() => { toast.className = 'toast'; }, 3200);
   }
 
-  photoInput.addEventListener('change', function(){
-    const file = photoInput.files[0];
+  function handlePhotoFile(file){
     if (!file) return;
 
     const reader = new FileReader();
@@ -322,13 +334,21 @@
       img.src = evt.target.result;
     };
     reader.readAsDataURL(file);
+  }
+
+  cameraInput.addEventListener('change', function(){
+    handlePhotoFile(cameraInput.files[0]);
+  });
+  libraryInput.addEventListener('change', function(){
+    handlePhotoFile(libraryInput.files[0]);
   });
 
   retakeBtn.addEventListener('click', function(){
     compressedPhotoDataUrl = null;
-    photoInput.value = '';
+    cameraInput.value = '';
+    libraryInput.value = '';
     previewWrap.style.display = 'none';
-    photoPromptWrap.style.display = 'block';
+    photoPromptWrap.style.display = 'flex';
   });
 
   form.addEventListener('submit', function(e){
@@ -371,7 +391,7 @@
       form.reset();
       compressedPhotoDataUrl = null;
       previewWrap.style.display = 'none';
-      photoPromptWrap.style.display = 'block';
+      photoPromptWrap.style.display = 'flex';
       document.getElementById('relatedWork').selectedIndex = 0;
     })
     .catch(function(){
