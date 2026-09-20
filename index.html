@@ -4,7 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F2F1EB">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Receipt Log</title>
+<script>
+  // Force a fully fresh copy of this page every time it's opened, so updates
+  // pushed to GitHub show up immediately instead of a stale cached version
+  // (this matters most for the home-screen icon, which otherwise can hang
+  // onto an old copy of the page for a while).
+  (function () {
+    var url = new URL(window.location.href);
+    if (!url.searchParams.has('v')) {
+      url.searchParams.set('v', Date.now().toString());
+      window.location.replace(url.toString());
+    }
+  })();
+</script>
 <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Receipt%20Log%22,%22display%22:%22standalone%22}">
 <style>
   :root{
@@ -303,6 +319,15 @@
   }
   updateNow();
   setInterval(updateNow, 15000);
+
+  // If the browser restores this page from its back/forward cache (common
+  // when reopening a home-screen icon) instead of loading it fresh, force
+  // a real reload so any newly pushed changes actually show up.
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
 
   function showToast(msg, isErr){
     toast.textContent = msg;
